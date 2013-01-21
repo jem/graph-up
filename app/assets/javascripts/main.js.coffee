@@ -2,55 +2,53 @@ log = (obj) ->
   console.log obj
 
 $ ->
-  data = [4, 8, 35, 16, 35, 23, 42]
+  t = 1297110663
+  v = 70
+
+  next = ->
+    time: ++t
+    value: v = ~~Math.max(10, Math.min(90, v + 10*(Math.random() - 0.5)))
+
+  data = d3.range(33).map(next)
+
+  setInterval(
+    ->
+      data.shift()
+      data.push(next())
+      redraw()
+    1500
+  )
+
+  w = 20
+  h = 200
+
+  x = d3.scale.linear().domain([0, 1]).range([0, w])
+  y = d3.scale.linear().domain([0, 100]).rangeRound([0, h])
 
   chart = d3.select("body").append("svg")
     .attr("class", "chart")
-    .attr("width", 460)
-    .attr("height", 330)
-    .append("g")
-    .attr("transform", "translate(10, 15)")
+    .attr("width", w*data.length - 1)
+    .attr("height", h)
 
-  x = d3.scale.linear().domain([0, d3.max(data)]).range([0, 420])
-  y = d3.scale.ordinal().domain([0...data.length]).rangeBands([0, 300])
-  window.y = y
-
-  chart.selectAll("line")
-    .data(x.ticks(10))
-    .enter().append("line")
-    .attr("x1", x)
-    .attr("x2", x)
-    .attr("y1", 0)
-    .attr("y1", 330)
-    .style("stroke", "#ccc")
-
-  chart.selectAll("rect").data(data).enter().append("rect")
-    .attr("y", (d,i) -> y(i))
-    .attr("width", x)
-    .attr("height", y.rangeBand())
-
-  chart.selectAll("text")
+  chart.selectAll("rect")
     .data(data)
-    .enter().append("text")
-    .attr("x", x)
-    .attr("y", (d,i) -> y(i) + y.rangeBand() / 2)
-    .attr("dx", -10)
-    .attr("dy", ".35em")
-    .attr("text-anchor", "end")
-    .text(String)
-
-
-  chart.selectAll(".rule")
-    .data(x.ticks(10))
-    .enter().append("text").attr("class", "rule")
-    .attr("x", x)
-    .attr("y", 0)
-    .attr("dy", -3)
-    .attr("text-anchor", "middle")
-    .text(String)
-    .style("fill", "black")
+    .enter().append("rect")
+    .attr("x", (d, i) -> x(i) - 0.5)
+    .attr("y", (d) -> h - y(d.value) - 0.5)
+    .attr("width", w)
+    .attr("height", (d) -> y(d.value))
 
   chart.append("line")
-    .attr("y1", 0)
-    .attr("y2", 330)
-    .style("stroke", "#000")
+    .attr("x1", 0)
+    .attr("x2", w*data.length)
+    .attr("y1", h - 0.5)
+    .attr("y2", h - 0.5)
+    .style("stroke", "black")
+
+  redraw = ->
+    chart.selectAll("rect")
+      .data(data)
+      .transition()
+      .duration(1000)
+      .attr("y", (d) -> h - y(d.value) - 0.5)
+      .attr("height", (d) -> y(d.value))
