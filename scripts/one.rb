@@ -1,5 +1,6 @@
 require 'csv'
 require 'duration'
+require 'json'
 
 class Duration
   def to_f
@@ -24,6 +25,14 @@ class Record
 
   def up_at
     bedtime_at + bed_duration.to_i.seconds
+  end
+
+  def bedtime_at_minutes
+    row[:s_bedtime]
+  end
+
+  def up_at_minutes
+    row[:s_bedtime] + bed_duration.to_i / 60
   end
 
   def slept_at
@@ -132,7 +141,18 @@ end
 csv.convert(:numeric)
 results = csv.read
 
-results.each do |row|
+records = results.map do |row|
   #puts row.each{|k,v| p [k,v]}
-  Record.new(row).summarize
+  Record.new(row)
 end
+
+records.each &:summarize
+
+encodable = records.map do |r|
+  {
+    sleep: r.bedtime_at_minutes,
+    up_at: r.up_at_minutes
+  }
+end
+
+puts JSON.dumps encodable
