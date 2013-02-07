@@ -20,7 +20,7 @@ class Record
   end
 
   def bedtime_at
-    date + row[:s_bedtime].minutes
+    date + bedtime_at_minutes.minutes
   end
 
   def up_at
@@ -28,11 +28,15 @@ class Record
   end
 
   def bedtime_at_minutes
-    row[:s_bedtime]
+    mins = row[:s_bedtime].to_i
+    if mins >= 12*60
+      mins -= 24*60
+    end
+    mins
   end
 
   def up_at_minutes
-    row[:s_bedtime] + bed_duration.to_i / 60
+    (bedtime_at_minutes + bed_duration.to_i / 60).to_i
   end
 
   def slept_at
@@ -146,13 +150,18 @@ records = results.map do |row|
   Record.new(row)
 end
 
-records.each &:summarize
+#records.each &:summarize
 
-encodable = records.map do |r|
-  {
-    sleep: r.bedtime_at_minutes,
-    up_at: r.up_at_minutes
-  }
+encodable = records.each_slice(7).map do |data|
+  data.map do |r|
+    {
+      date: r.date.inspect,
+      sleep: r.bedtime_at_minutes,
+      up_at: r.up_at_minutes
+    }
+  end
 end
 
-puts JSON.dumps encodable
+File.open("app/assets/javascripts/data.js", "w") do |f|
+  f.puts "weeks = #{JSON.dump(encodable)};"
+end
